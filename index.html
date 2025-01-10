@@ -1,1 +1,110 @@
-<h1>Hello!</h1>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Electrocardiograma en Tiempo Real</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: black; /* Fondo oscuro */
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="ecgCanvas"></canvas>
+  <script>
+    // Configurar el canvas
+    const canvas = document.getElementById('ecgCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Ajustar el tamaño del canvas al tamaño de la ventana
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Configuración inicial
+    const dataPoints = Array(500).fill(canvas.height / 2); // Puntos iniciales centrados
+    const stepX = canvas.width / dataPoints.length; // Espaciado horizontal entre puntos
+    const maxAmplitude = canvas.height; // Rango de valores en el eje Y
+
+    // Función para dibujar el fondo con cuadrícula
+    function drawGrid() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // Limpiar el canvas
+
+      // Dibujar líneas de cuadrícula gruesas
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)'; // Líneas blancas tenues
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i <= canvas.width; i += canvas.width / 10) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
+      }
+      for (let i = 0; i <= canvas.height; i += canvas.height / 10) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(canvas.width, i);
+        ctx.stroke();
+      }
+
+      // Dibujar líneas de cuadrícula finas
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i <= canvas.width; i += canvas.width / 50) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, canvas.height);
+        ctx.stroke();
+      }
+      for (let i = 0; i <= canvas.height; i += canvas.height / 50) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(canvas.width, i);
+        ctx.stroke();
+      }
+    }
+
+    // Función para dibujar el gráfico
+    function drawGraph() {
+      drawGrid(); // Dibujar la cuadrícula en cada actualización
+
+      // Dibujar la línea del gráfico
+      ctx.strokeStyle = 'lime'; // Línea verde típica
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i < dataPoints.length; i++) {
+        const x = i * stepX;
+        const y = dataPoints[i];
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.stroke();
+    }
+
+    // Función para agregar un nuevo punto
+    function updateGraph(newValue) {
+      dataPoints.push(newValue); // Agregar nuevo valor
+      dataPoints.shift(); // Eliminar el valor más viejo
+      drawGraph(); // Redibujar el gráfico
+    }
+
+    // Listener para recibir datos desde Thunkable
+    window.addEventListener('message', function(event) {
+      const newData = parseFloat(event.data);
+      if (!isNaN(newData)) {
+        // Escalar el valor recibido al rango del canvas
+        const scaledValue = canvas.height - (newData / 1024) * canvas.height;
+        updateGraph(scaledValue);
+      }
+    });
+
+    // Dibujar por primera vez
+    drawGraph();
+  </script>
+</body>
+</html>
